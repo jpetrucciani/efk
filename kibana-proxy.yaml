@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana-proxy-svc
+  namespace: kube-system
+  labels:
+    app: kibana-proxy-dep
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: "TCP"
+  selector:
+    app: kibana-proxy-dep
+    version: 0.0.1
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kibana-proxy-dep
+  namespace: kube-system
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: kibana-proxy-dep
+        app: kibana-proxy-dep
+        version: 0.0.1
+    spec:
+      volumes:
+        - name: "htpasswd"
+          secret:
+            secretName: htpasswd
+      containers:
+      - name: kibana-proxy-dep
+        image: jpetrucciani/kibana-proxy:0.0.2
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: "htpasswd"
+            mountPath: "/etc/nginx/.htpasswd"
+            readOnly: true
